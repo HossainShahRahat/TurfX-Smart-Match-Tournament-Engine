@@ -53,6 +53,10 @@ function sanitizeMatch(match, score, timeline) {
     teamB: (match.teamB || []).map(sanitizeMatchPlayer),
     status: match.status,
     createdBy: normalizeId(match.createdBy),
+    tournamentId: normalizeId(match.tournamentId),
+    tournamentStage: match.tournamentStage || null,
+    tournamentRound: match.tournamentRound || null,
+    tournamentGroup: match.tournamentGroup || null,
     createdAt: match.createdAt,
     updatedAt: match.updatedAt,
     score,
@@ -170,6 +174,10 @@ export async function createMatchRecord(payload, currentUser) {
     teamB: payload.teamB,
     status: MATCH_STATUS.PENDING,
     createdBy: currentUser.id,
+    tournamentId: payload.tournamentId || null,
+    tournamentStage: payload.tournamentStage || null,
+    tournamentRound: payload.tournamentRound || null,
+    tournamentGroup: payload.tournamentGroup || null,
   });
 
   const hydratedMatch = await findMatchById(match._id, {
@@ -352,6 +360,14 @@ export async function updateMatchStatus(matchId, nextStatus, currentUser) {
 
   const updatedMatch = await updateMatch(matchId, { status: nextStatus });
   const matchDetails = await getMatchDetails(updatedMatch._id);
+
+  if (
+    nextStatus === MATCH_STATUS.FINISHED &&
+    match.tournamentId
+  ) {
+    const { syncTournamentProgress } = await import("@/services/tournament.service");
+    await syncTournamentProgress(match.tournamentId.toString());
+  }
 
   emitMatchState({
     matchId: matchId.toString(),

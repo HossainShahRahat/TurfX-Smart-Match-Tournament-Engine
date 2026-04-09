@@ -52,3 +52,15 @@ export const MATCH_EVENT_TYPES = {
   RED_CARD: "red_card",
   SUBSTITUTION: "substitution",
 };
+
+export const TOURNAMENT_TYPES = {
+  LEAGUE: "league",
+  KNOCKOUT: "knockout",
+  HYBRID: "hybrid",
+};
+
+export const TOURNAMENT_STATUS = {
+  UPCOMING: "upcoming",
+  ACTIVE: "active",
+  COMPLETED: "completed",
+};

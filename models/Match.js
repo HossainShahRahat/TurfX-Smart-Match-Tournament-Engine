@@ -30,6 +30,27 @@ const matchSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    tournamentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tournament",
+      default: null,
+      index: true,
+    },
+    tournamentStage: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    tournamentRound: {
+      type: Number,
+      default: null,
+      min: 1,
+    },
+    tournamentGroup: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   {
     timestamps: true,
