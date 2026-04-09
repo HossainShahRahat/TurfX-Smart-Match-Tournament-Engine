@@ -28,6 +28,7 @@ export const DEFAULT_DASHBOARD_ROUTE_BY_ROLE = {
 };
 
 export const COLLECTION_NAMES = {
+  EVENT: "events",
   MATCH: "matches",
   TOURNAMENT: "tournaments",
   PLAYER: "players",
@@ -37,4 +38,17 @@ export const PAGINATION_DEFAULTS = {
   PAGE: 1,
   LIMIT: 20,
   MAX_LIMIT: 100,
+};
+
+export const MATCH_STATUS = {
+  PENDING: "pending",
+  LIVE: "live",
+  FINISHED: "finished",
+};
+
+export const MATCH_EVENT_TYPES = {
+  GOAL: "goal",
+  YELLOW_CARD: "yellow_card",
+  RED_CARD: "red_card",
+  SUBSTITUTION: "substitution",
 };
