@@ -10,6 +10,11 @@ import { createEvent, listEvents } from "@/repositories/event.repository";
 import { createMatch, findMatchById, listMatches, updateMatch } from "@/repositories/match.repository";
 import { findPlayerById } from "@/repositories/player.repository";
 import { updatePlayerPerformanceStats } from "@/modules/players/service";
+import {
+  emitMatchEvent,
+  emitMatchState,
+  emitPlayerStatUpdate,
+} from "@/realtime/match-broadcaster";
 import { createHttpError } from "@/utils/http-error";
 
 function normalizeId(value) {
@@ -246,10 +251,12 @@ export async function addEventToMatch(payload) {
       minute: payload.minute,
     });
 
+    let updatedPlayer = null;
+
     if (payload.type === MATCH_EVENT_TYPES.GOAL) {
       const player = await findPlayerById(payload.playerId);
 
-      await updatePlayerPerformanceStats(payload.playerId, {
+      updatedPlayer = await updatePlayerPerformanceStats(payload.playerId, {
         totalGoals: player.totalGoals + 1,
       });
     }
@@ -259,11 +266,32 @@ export async function addEventToMatch(payload) {
       getMatchTimeline(payload.matchId),
     ]);
 
-    return {
+    const response = {
       event: timeline[timeline.length - 1] || sanitizeEvent(event, teamLookup),
       score,
       timeline,
+      updatedPlayer,
     };
+
+    emitMatchEvent({
+      matchId: payload.matchId.toString(),
+      playerId: payload.playerId.toString(),
+      type: payload.type,
+      minute: payload.minute,
+      updatedScore: score,
+      updatedTimeline: timeline,
+      updatedPlayer,
+      event: response.event,
+    });
+
+    if (updatedPlayer) {
+      emitPlayerStatUpdate({
+        matchId: payload.matchId.toString(),
+        player: updatedPlayer,
+      });
+    }
+
+    return response;
   } catch (error) {
     if (error?.code === 11000) {
       throw createHttpError(
@@ -323,5 +351,16 @@ export async function updateMatchStatus(matchId, nextStatus, currentUser) {
   }
 
   const updatedMatch = await updateMatch(matchId, { status: nextStatus });
-  return getMatchDetails(updatedMatch._id);
+  const matchDetails = await getMatchDetails(updatedMatch._id);
+
+  emitMatchState({
+    matchId: matchId.toString(),
+    status: matchDetails.status,
+    updatedScore: matchDetails.score,
+    updatedTimeline: matchDetails.timeline,
+    teamA: matchDetails.teamA,
+    teamB: matchDetails.teamB,
+  });
+
+  return matchDetails;
 }
