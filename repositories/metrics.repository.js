@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 import connectToDatabase from "@/lib/db";
 import { COLLECTION_NAMES } from "@/config/constants";
+import "@/models/Player";
 
 function getRegisteredModel(name) {
   return mongoose.models[name] || null;
