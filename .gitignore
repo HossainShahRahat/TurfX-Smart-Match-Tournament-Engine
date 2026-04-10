@@ -2,6 +2,7 @@
 **/.next-frontend
 **/.next-backend
 **/node_modules
+.runtime/
 *.log
 *.err.log
 .codex-dev.log

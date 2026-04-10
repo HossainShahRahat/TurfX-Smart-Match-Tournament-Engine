@@ -4,6 +4,7 @@ const path = require("path");
 
 const next = require("next");
 const { Server } = require("socket.io");
+const { findAvailablePort, writeRuntimePorts } = require("../scripts/runtime-ports.cjs");
 
 function loadEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -34,10 +35,23 @@ function loadEnvFile(filePath) {
   }
 }
 
+function isAllowedOrigin(origin) {
+  if (!origin) {
+    return true;
+  }
+
+  if (process.env.FRONTEND_ORIGIN && origin === process.env.FRONTEND_ORIGIN) {
+    return true;
+  }
+
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+}
+
 function applyCors(request, response) {
-  const allowedOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:3000";
   const requestOrigin = request.headers.origin;
-  const origin = requestOrigin && requestOrigin === allowedOrigin ? requestOrigin : allowedOrigin;
+  const origin = isAllowedOrigin(requestOrigin)
+    ? requestOrigin || process.env.FRONTEND_ORIGIN || "http://localhost:3000"
+    : process.env.FRONTEND_ORIGIN || "http://localhost:3000";
 
   response.setHeader("Access-Control-Allow-Origin", origin);
   response.setHeader("Vary", "Origin");
@@ -54,22 +68,21 @@ process.env.NEXT_DIST_DIR = ".next-backend";
 
 const dev = !process.argv.includes("--prod");
 const hostname = "0.0.0.0";
-const port = Number(process.env.BACKEND_PORT || 4000);
+const preferredPort = Number(process.env.BACKEND_PORT || 4000);
 const frontendDir = path.join(__dirname, "..", "frontend");
-
-const app = next({
-  dev,
-  hostname,
-  port,
-  dir: frontendDir,
-});
-const handle = app.getRequestHandler();
 
 function createSocketServer(httpServer) {
   const io = new Server(httpServer, {
     path: "/socket.io",
     cors: {
-      origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
+      origin(origin, callback) {
+        if (isAllowedOrigin(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error("Origin not allowed by TurfX socket server."));
+      },
       credentials: true,
     },
   });
@@ -78,9 +91,30 @@ function createSocketServer(httpServer) {
   return io;
 }
 
-app
-  .prepare()
-  .then(() => {
+async function start() {
+  const port = await findAvailablePort(preferredPort, "0.0.0.0");
+
+  if (port !== preferredPort) {
+    console.log(`Preferred backend port ${preferredPort} was busy. Using ${port} instead.`);
+  }
+
+  writeRuntimePorts({
+    backend: {
+      port,
+      url: `http://localhost:${port}`,
+    },
+  });
+
+  const app = next({
+    dev,
+    hostname,
+    port,
+    dir: frontendDir,
+  });
+  const handle = app.getRequestHandler();
+
+  await app.prepare();
+
     const httpServer = createServer((request, response) => {
       if (request.url?.startsWith("/api/")) {
         applyCors(request, response);
@@ -102,8 +136,9 @@ app
         `> TurfX backend ready on http://${hostname}:${port} (${dev ? "development" : "production"})`
       );
     });
-  })
-  .catch((error) => {
-    console.error("Failed to start TurfX backend:", error);
-    process.exit(1);
-  });
+}
+
+start().catch((error) => {
+  console.error("Failed to start TurfX backend:", error);
+  process.exit(1);
+});

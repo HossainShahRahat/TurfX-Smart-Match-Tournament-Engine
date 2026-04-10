@@ -6,18 +6,11 @@ import {
   JWT_CONFIG,
   USER_ROLES,
 } from "@/config/constants";
-import { getServerApiBaseUrl } from "@/services/api-client";
 import { getSessionUserFromCookies } from "@/utils/session";
 
 import { assertDashboardApiResponse } from "./validator";
 
 function buildBaseUrl(headerStore) {
-  const configuredBaseUrl = getServerApiBaseUrl();
-
-  if (configuredBaseUrl) {
-    return configuredBaseUrl;
-  }
-
   const host = headerStore.get("x-forwarded-host") || headerStore.get("host");
   const protocol = headerStore.get("x-forwarded-proto") || "http";
 

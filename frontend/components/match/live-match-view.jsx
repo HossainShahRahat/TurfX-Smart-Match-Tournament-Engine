@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { io } from "socket.io-client";
-import { apiFetch, getSocketServerUrl } from "@/services/api-client";
+import { apiFetch } from "@/services/api-client";
 
 function formatEventLabel(type) {
   return type
@@ -103,89 +103,119 @@ export default function LiveMatchView({ matchId }) {
   }, [matchId]);
 
   useEffect(() => {
-    const socket = io(getSocketServerUrl(), {
-      path: "/socket.io",
-      withCredentials: true,
-      transports: ["websocket", "polling"],
-    });
+    let isActive = true;
+    let socket;
 
-    socket.on("connect", () => {
-      setConnectionState("connected");
-      socket.emit("match:join", matchId);
-    });
+    async function connectSocket() {
+      try {
+        const response = await fetch("/api/runtime/socket", {
+          cache: "no-store",
+        });
+        const payload = await response.json();
 
-    socket.on("disconnect", () => {
-      setConnectionState("disconnected");
-    });
+        socket = io(payload.url, {
+          path: "/socket.io",
+          withCredentials: true,
+          transports: ["websocket", "polling"],
+        });
 
-    socket.on("connect_error", () => {
-      setConnectionState("disconnected");
-    });
+        socket.on("connect", () => {
+          if (!isActive) {
+            return;
+          }
 
-    socket.on("match:event", (payload) => {
-      setLastEvent(payload.event || null);
-      setMatch((currentMatch) => {
-        if (!currentMatch) {
-          return currentMatch;
+          setConnectionState("connected");
+          socket.emit("match:join", matchId);
+        });
+
+        socket.on("disconnect", () => {
+          if (isActive) {
+            setConnectionState("disconnected");
+          }
+        });
+
+        socket.on("connect_error", () => {
+          if (isActive) {
+            setConnectionState("disconnected");
+          }
+        });
+
+        socket.on("match:event", (payload) => {
+          setLastEvent(payload.event || null);
+          setMatch((currentMatch) => {
+            if (!currentMatch) {
+              return currentMatch;
+            }
+
+            const nextMatch = {
+              ...currentMatch,
+              score: payload.updatedScore,
+              timeline: payload.updatedTimeline,
+            };
+
+            if (payload.updatedPlayer) {
+              nextMatch.teamA = currentMatch.teamA.map((player) =>
+                player.id === payload.updatedPlayer.id ? payload.updatedPlayer : player
+              );
+              nextMatch.teamB = currentMatch.teamB.map((player) =>
+                player.id === payload.updatedPlayer.id ? payload.updatedPlayer : player
+              );
+            }
+
+            return nextMatch;
+          });
+        });
+
+        socket.on("match:state", (payload) => {
+          setMatch((currentMatch) => {
+            if (!currentMatch) {
+              return currentMatch;
+            }
+
+            return {
+              ...currentMatch,
+              status: payload.status,
+              score: payload.updatedScore,
+              timeline: payload.updatedTimeline,
+              teamA: payload.teamA || currentMatch.teamA,
+              teamB: payload.teamB || currentMatch.teamB,
+            };
+          });
+        });
+
+        socket.on("player:updated", (payload) => {
+          setMatch((currentMatch) => {
+            if (!currentMatch || !payload?.player) {
+              return currentMatch;
+            }
+
+            return {
+              ...currentMatch,
+              teamA: currentMatch.teamA.map((player) =>
+                player.id === payload.player.id ? payload.player : player
+              ),
+              teamB: currentMatch.teamB.map((player) =>
+                player.id === payload.player.id ? payload.player : player
+              ),
+            };
+          });
+        });
+      } catch (socketError) {
+        if (isActive) {
+          setConnectionState("disconnected");
         }
+      }
+    }
 
-        const nextMatch = {
-          ...currentMatch,
-          score: payload.updatedScore,
-          timeline: payload.updatedTimeline,
-        };
-
-        if (payload.updatedPlayer) {
-          nextMatch.teamA = currentMatch.teamA.map((player) =>
-            player.id === payload.updatedPlayer.id ? payload.updatedPlayer : player
-          );
-          nextMatch.teamB = currentMatch.teamB.map((player) =>
-            player.id === payload.updatedPlayer.id ? payload.updatedPlayer : player
-          );
-        }
-
-        return nextMatch;
-      });
-    });
-
-    socket.on("match:state", (payload) => {
-      setMatch((currentMatch) => {
-        if (!currentMatch) {
-          return currentMatch;
-        }
-
-        return {
-          ...currentMatch,
-          status: payload.status,
-          score: payload.updatedScore,
-          timeline: payload.updatedTimeline,
-          teamA: payload.teamA || currentMatch.teamA,
-          teamB: payload.teamB || currentMatch.teamB,
-        };
-      });
-    });
-
-    socket.on("player:updated", (payload) => {
-      setMatch((currentMatch) => {
-        if (!currentMatch || !payload?.player) {
-          return currentMatch;
-        }
-
-        return {
-          ...currentMatch,
-          teamA: currentMatch.teamA.map((player) =>
-            player.id === payload.player.id ? payload.player : player
-          ),
-          teamB: currentMatch.teamB.map((player) =>
-            player.id === payload.player.id ? payload.player : player
-          ),
-        };
-      });
-    });
+    connectSocket();
 
     return () => {
-      socket.emit("match:leave", matchId);
-      socket.disconnect();
+      isActive = false;
+
+      if (socket) {
+        socket.emit("match:leave", matchId);
+        socket.disconnect();
+      }
     };
   }, [matchId]);
 
