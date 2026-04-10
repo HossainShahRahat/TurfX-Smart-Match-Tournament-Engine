@@ -1,11 +1,7 @@
 import { HTTP_STATUS } from "@/config/constants";
 import { errorResponse, successResponse } from "@/utils/api-response";
 
-import {
-  createPlayerProfile,
-  getAllPlayers,
-  getPlayerById,
-} from "./service";
+import { createPlayerProfile, getAllPlayers, getPlayerById } from "./service";
 import {
   parsePlayerRequestBody,
   validateCreatePlayerPayload,
@@ -22,15 +18,16 @@ export async function createPlayerController(request) {
     return successResponse(
       player,
       "Player created successfully.",
-      HTTP_STATUS.CREATED
+      HTTP_STATUS.CREATED,
     );
   } catch (error) {
     return errorResponse(error, "Failed to create player.");
   }
 }
 
-export async function listPlayersController() {
+export async function listPlayersController(request) {
   try {
+    authenticateRequest(request);
     const players = await getAllPlayers();
     return successResponse(players, "Players fetched successfully.");
   } catch (error) {
@@ -38,8 +35,9 @@ export async function listPlayersController() {
   }
 }
 
-export async function getPlayerByIdController(_request, context) {
+export async function getPlayerByIdController(request, context) {
   try {
+    authenticateRequest(request);
     const { id } = await context.params;
     validatePlayerId(id);
 

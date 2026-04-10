@@ -28,7 +28,7 @@ export async function registerUser(payload) {
   if (existingUser) {
     throw createHttpError(
       "User already exists with this email.",
-      HTTP_STATUS.CONFLICT
+      HTTP_STATUS.CONFLICT,
     );
   }
 
@@ -46,6 +46,34 @@ export async function loginUser(payload) {
   const identifier = String(payload.identifier || payload.email || "")
     .toLowerCase()
     .trim();
+  const password = payload.password;
+
+  // Admin env check & auto-create
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (
+    adminEmail &&
+    adminPassword &&
+    identifier === adminEmail.toLowerCase().trim() &&
+    password === adminPassword
+  ) {
+    let adminUser = await findUserByEmail(identifier, {
+      includePassword: true,
+    });
+    if (!adminUser || adminUser.role !== "admin") {
+      // Create admin if not exists or wrong role
+      const hashedPassword = await hashPassword(adminPassword);
+      adminUser = await createUser({
+        name: "Admin",
+        email: identifier,
+        password: hashedPassword,
+        role: "admin",
+        turfId: null,
+      });
+    }
+    // Proceed to validate pw (will match since we just hashed or existing)
+  }
+
   const user =
     (await findUserByEmail(identifier, {
       includePassword: true,
@@ -57,23 +85,23 @@ export async function loginUser(payload) {
   if (!user) {
     throw createHttpError(
       "Invalid email/username or password.",
-      HTTP_STATUS.UNAUTHORIZED
+      HTTP_STATUS.UNAUTHORIZED,
     );
   }
 
   if (user.status === "suspended") {
     throw createHttpError(
       "Account suspended. Please contact support.",
-      HTTP_STATUS.FORBIDDEN
+      HTTP_STATUS.FORBIDDEN,
     );
   }
 
-  const isPasswordValid = await comparePassword(payload.password, user.password);
+  const isPasswordValid = await comparePassword(password, user.password);
 
   if (!isPasswordValid) {
     throw createHttpError(
       "Invalid email/username or password.",
-      HTTP_STATUS.UNAUTHORIZED
+      HTTP_STATUS.UNAUTHORIZED,
     );
   }
 

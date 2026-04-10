@@ -4,7 +4,12 @@ import {
   findPlayerById,
   listPlayers,
 } from "@/repositories/player.repository";
-import { buildPlayerProfileById, sanitizePlayerSummary } from "@/services/player-profile.service";
+import { createUser, findUserByUsername } from "@/repositories/user.repository";
+import { hashPassword } from "@/utils/password";
+import {
+  buildPlayerProfileById,
+  sanitizePlayerSummary,
+} from "@/services/player-profile.service";
 import {
   calculateSkillRating,
   recalculatePlayerSkill,
@@ -17,7 +22,8 @@ function sanitizePlayer(player) {
   return {
     id: player._id.toString(),
     name: player.name,
-    userId: player.userId?._id?.toString?.() || player.userId?.toString?.() || null,
+    userId:
+      player.userId?._id?.toString?.() || player.userId?.toString?.() || null,
     totalGoals: player.totalGoals,
     totalMatches: player.totalMatches,
     averagePeerRating: player.averagePeerRating || 0,
@@ -35,9 +41,30 @@ function sanitizePlayer(player) {
 }
 
 export async function createPlayerProfile(payload) {
+  const autoPw = payload.name.toLowerCase().replace(/\\s+/g, "");
+  const username = autoPw;
+
+  // Check existing user
+  const existingUser = await findUserByUsername(username);
+  if (existingUser) {
+    throw createHttpError(
+      `Player username \${username} already exists.`,
+      HTTP_STATUS.CONFLICT,
+    );
+  }
+
+  const hashedPassword = await hashPassword(autoPw);
+  const user = await createUser({
+    name: payload.name.trim(),
+    username,
+    password: hashedPassword,
+    role: "player",
+    turfId: null,
+  });
+
   const player = await createPlayer({
     name: payload.name.trim(),
-    userId: payload.userId || null,
+    userId: user._id,
     totalGoals: 0,
     totalMatches: 0,
     skillRating: 0,
@@ -47,7 +74,9 @@ export async function createPlayerProfile(payload) {
     manOfTheMatchCount: 0,
   });
 
-  return sanitizePlayer(player);
+  const sanitized = sanitizePlayer(player);
+  sanitized.initialPassword = autoPw; // Inform creator of pw
+  return sanitized;
 }
 
 export async function getAllPlayers() {

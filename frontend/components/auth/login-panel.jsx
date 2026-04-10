@@ -45,10 +45,16 @@ export default function LoginPanel() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-8 rounded-3xl border border-white/10 bg-slate-950/50 p-6 text-left">
+    <form
+      onSubmit={handleSubmit}
+      className="mt-8 rounded-3xl border border-white/10 bg-slate-950/50 p-6 text-left"
+    >
       <h2 className="text-xl font-semibold text-white">Sign In</h2>
       <p className="mt-2 text-sm text-slate-400">
-        Admins and players both sign in here. Players must use credentials created by an admin.
+        Sign in with email/username &amp; password. Admin: use
+        ADMIN_EMAIL/ADMIN_PASSWORD from backend/.env (auto-saves hashed on first
+        login). Players: auto-generated on creation (username/pw = lowercase
+        no-space name).
       </p>
 
       <div className="mt-5 grid gap-3">

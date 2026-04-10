@@ -1,8 +1,4 @@
-import {
-  HTTP_STATUS,
-  MATCH_STATUS,
-  USER_ROLES,
-} from "@/config/constants";
+import { HTTP_STATUS, MATCH_STATUS, USER_ROLES } from "@/config/constants";
 import { authenticateRequest, authorizeRoles } from "@/middleware/auth";
 import { errorResponse, successResponse } from "@/utils/api-response";
 
@@ -40,16 +36,15 @@ export async function createMatchController(request) {
     return successResponse(
       match,
       "Match created successfully.",
-      HTTP_STATUS.CREATED
+      HTTP_STATUS.CREATED,
     );
   } catch (error) {
     return errorResponse(error, "Failed to create match.");
   }
 }
 
-export async function listMatchesController(request) {
+export async function listMatchesController() {
   try {
-    authenticateRequest(request);
     const matches = await getAllMatches();
     return successResponse(matches, "Matches fetched successfully.");
   } catch (error) {
@@ -57,9 +52,8 @@ export async function listMatchesController(request) {
   }
 }
 
-export async function getMatchByIdController(request, context) {
+export async function getMatchByIdController(context) {
   try {
-    authenticateRequest(request);
     const { id } = await context.params;
     validateMatchId(id);
 
@@ -83,7 +77,11 @@ export async function updateMatchFixtureController(request, context) {
     validateUpdateMatchPayload(body);
 
     const match = await updateMatchFixture(id, body, currentUser);
-    return successResponse(match, "Match updated successfully.", HTTP_STATUS.OK);
+    return successResponse(
+      match,
+      "Match updated successfully.",
+      HTTP_STATUS.OK,
+    );
   } catch (error) {
     return errorResponse(error, "Failed to update match.");
   }
@@ -101,7 +99,7 @@ export async function addMatchEventController(request) {
     return successResponse(
       result,
       "Match event added successfully.",
-      HTTP_STATUS.CREATED
+      HTTP_STATUS.CREATED,
     );
   } catch (error) {
     return errorResponse(error, "Failed to add match event.");
@@ -122,7 +120,11 @@ export async function updateMatchStatusController(request, context) {
 
     const match = await updateMatchStatus(id, body.status, currentUser);
 
-    return successResponse(match, "Match status updated successfully.", HTTP_STATUS.OK);
+    return successResponse(
+      match,
+      "Match status updated successfully.",
+      HTTP_STATUS.OK,
+    );
   } catch (error) {
     return errorResponse(error, "Failed to update match status.");
   }
@@ -141,7 +143,11 @@ export async function updateMatchScoreController(request, context) {
     validateMatchScorePayload(body);
 
     const match = await updateMatchScore(id, body, currentUser);
-    return successResponse(match, "Match score updated successfully.", HTTP_STATUS.OK);
+    return successResponse(
+      match,
+      "Match score updated successfully.",
+      HTTP_STATUS.OK,
+    );
   } catch (error) {
     return errorResponse(error, "Failed to update match score.");
   }
