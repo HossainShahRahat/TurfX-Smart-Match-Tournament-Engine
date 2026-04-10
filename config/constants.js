@@ -64,3 +64,10 @@ export const TOURNAMENT_STATUS = {
   ACTIVE: "active",
   COMPLETED: "completed",
 };
+
+export const POST_TYPES = {
+  MATCH_HIGHLIGHT: "match_highlight",
+  PLAYER_UPDATE: "player_update",
+  TOURNAMENT_UPDATE: "tournament_update",
+  MANUAL_POST: "manual_post",
+};

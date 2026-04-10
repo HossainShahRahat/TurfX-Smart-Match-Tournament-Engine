@@ -1,0 +1,29 @@
+import mongoose from "mongoose";
+
+const postLikeSchema = new mongoose.Schema(
+  {
+    postId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Post",
+      required: true,
+      index: true,
+    },
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    updatedAt: false,
+  }
+);
+
+postLikeSchema.index({ postId: 1, userId: 1 }, { unique: true });
+
+const PostLike =
+  mongoose.models.PostLike || mongoose.model("PostLike", postLikeSchema);
+
+export default PostLike;
