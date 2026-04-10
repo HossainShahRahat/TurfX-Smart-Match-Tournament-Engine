@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from "@/utils/api-response";
 import {
   activateUser,
   closeTournament,
+  createAdminPlayer,
   deleteComment,
   deleteMatch,
   deletePost,
@@ -29,6 +30,7 @@ import {
 
 import {
   parseJsonBody,
+  validateAdminCreatePlayerPayload,
   validateDeleteCommentPayload,
   validateDeletePostPayload,
   validateMatchForceStatusPayload,
@@ -271,6 +273,18 @@ export async function getAdminPlayersController(request) {
   }
 }
 
+export async function createAdminPlayerController(request) {
+  try {
+    const admin = authorizeRoles(request, [USER_ROLES.ADMIN]);
+    const body = await parseJsonBody(request);
+    validateAdminCreatePlayerPayload(body);
+    const data = await createAdminPlayer(request, admin, body);
+    return successResponse(data, "Player account created successfully.", 201);
+  } catch (error) {
+    return errorResponse(error, "Failed to create player account.");
+  }
+}
+
 export async function listSettingsController(request) {
   try {
     authorizeRoles(request, [USER_ROLES.ADMIN]);
@@ -318,4 +332,3 @@ export async function notifyRoleBasedController(request) {
     return errorResponse(error, "Failed to send role-based notification.");
   }
 }
-

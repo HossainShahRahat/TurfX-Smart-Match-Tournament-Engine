@@ -4,12 +4,14 @@ import {
   findPlayerById,
   listPlayers,
 } from "@/repositories/player.repository";
+import { buildPlayerProfileById, sanitizePlayerSummary } from "@/services/player-profile.service";
 import {
   calculateSkillRating,
   recalculatePlayerSkill,
 } from "@/services/skill.service";
 import { createHttpError } from "@/utils/http-error";
 import { updatePlayerPerformanceStats } from "@/services/player-performance.service";
+import { updatePlayerStats } from "@/repositories/player.repository";
 
 function sanitizePlayer(player) {
   return {
@@ -18,9 +20,14 @@ function sanitizePlayer(player) {
     userId: player.userId?._id?.toString?.() || player.userId?.toString?.() || null,
     totalGoals: player.totalGoals,
     totalMatches: player.totalMatches,
+    averagePeerRating: player.averagePeerRating || 0,
+    peerRatingCount: player.peerRatingCount || 0,
+    manOfTheMatchCount: player.manOfTheMatchCount || 0,
     skillRating: calculateSkillRating({
       totalGoals: player.totalGoals,
       totalMatches: player.totalMatches,
+      averagePeerRating: player.averagePeerRating,
+      peerRatingCount: player.peerRatingCount,
     }),
     createdAt: player.createdAt,
     updatedAt: player.updatedAt,
@@ -34,6 +41,10 @@ export async function createPlayerProfile(payload) {
     totalGoals: 0,
     totalMatches: 0,
     skillRating: 0,
+    averagePeerRating: 0,
+    peerRatingSum: 0,
+    peerRatingCount: 0,
+    manOfTheMatchCount: 0,
   });
 
   return sanitizePlayer(player);
@@ -41,17 +52,11 @@ export async function createPlayerProfile(payload) {
 
 export async function getAllPlayers() {
   const players = await listPlayers({}, { sort: { createdAt: -1 } });
-  return players.map(sanitizePlayer);
+  return players.map(sanitizePlayerSummary);
 }
 
 export async function getPlayerById(id) {
-  const player = await findPlayerById(id, { lean: true });
-
-  if (!player) {
-    throw createHttpError("Player not found.", HTTP_STATUS.NOT_FOUND);
-  }
-
-  return sanitizePlayer(player);
+  return buildPlayerProfileById(id);
 }
 
 export async function recalculateAndPersistPlayerSkill(playerId) {

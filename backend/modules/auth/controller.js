@@ -10,12 +10,10 @@ import {
 
 export async function registerController(request) {
   try {
-    const body = await parseJsonBody(request);
-    validateRegisterPayload(body);
-
-    const user = await registerUser(body);
-
-    return successResponse(user, "User registered successfully.", HTTP_STATUS.CREATED);
+    return errorResponse(
+      { message: "Self-service registration is disabled. Ask an admin to create your account.", statusCode: HTTP_STATUS.FORBIDDEN },
+      "Failed to register user."
+    );
   } catch (error) {
     return errorResponse(error, "Failed to register user.");
   }

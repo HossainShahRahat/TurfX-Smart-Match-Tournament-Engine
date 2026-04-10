@@ -1,6 +1,7 @@
 import {
   activateUserController,
   closeTournamentController,
+  createAdminPlayerController,
   deleteCommentController,
   deleteMatchController,
   deletePostController,
@@ -95,6 +96,10 @@ export async function getAdminPlayersRoute(request) {
   return getAdminPlayersController(request);
 }
 
+export async function postAdminPlayersRoute(request) {
+  return createAdminPlayerController(request);
+}
+
 export async function getAdminSettingsRoute(request) {
   return listSettingsController(request);
 }
@@ -110,4 +115,3 @@ export async function postAdminNotifyGlobalRoute(request) {
 export async function postAdminNotifyRoleBasedRoute(request) {
   return notifyRoleBasedController(request);
 }
-

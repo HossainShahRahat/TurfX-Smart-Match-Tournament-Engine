@@ -4,6 +4,33 @@ import { MATCH_STATUS } from "@/config/constants";
 
 const matchSchema = new mongoose.Schema(
   {
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    scheduledAt: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    location: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    teamALabel: {
+      type: String,
+      required: true,
+      trim: true,
+      default: "Team A",
+    },
+    teamBLabel: {
+      type: String,
+      required: true,
+      trim: true,
+      default: "Team B",
+    },
     teamA: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +50,32 @@ const matchSchema = new mongoose.Schema(
       enum: Object.values(MATCH_STATUS),
       default: MATCH_STATUS.PENDING,
       index: true,
+    },
+    score: {
+      teamA: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+      teamB: {
+        type: Number,
+        default: 0,
+        min: 0,
+      },
+    },
+    completedAt: {
+      type: Date,
+      default: null,
+    },
+    manOfTheMatchPlayerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Player",
+      default: null,
+    },
+    manOfTheMatchReason: {
+      type: String,
+      default: null,
+      trim: true,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,5 +1,9 @@
 import { HTTP_STATUS } from "@/config/constants";
-import { createUser, findUserByEmail } from "@/repositories/user.repository";
+import {
+  createUser,
+  findUserByEmail,
+  findUserByUsername,
+} from "@/repositories/user.repository";
 import { signToken } from "@/utils/jwt";
 import { comparePassword, hashPassword } from "@/utils/password";
 import { createHttpError } from "@/utils/http-error";
@@ -9,6 +13,7 @@ function sanitizeUser(user) {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
+    username: user.username || null,
     role: user.role,
     turfId: user.turfId || null,
     createdAt: user.createdAt,
@@ -38,14 +43,20 @@ export async function registerUser(payload) {
 }
 
 export async function loginUser(payload) {
-  const normalizedEmail = payload.email.toLowerCase().trim();
-  const user = await findUserByEmail(normalizedEmail, {
-    includePassword: true,
-  });
+  const identifier = String(payload.identifier || payload.email || "")
+    .toLowerCase()
+    .trim();
+  const user =
+    (await findUserByEmail(identifier, {
+      includePassword: true,
+    })) ||
+    (await findUserByUsername(identifier, {
+      includePassword: true,
+    }));
 
   if (!user) {
     throw createHttpError(
-      "Invalid email or password.",
+      "Invalid email/username or password.",
       HTTP_STATUS.UNAUTHORIZED
     );
   }
@@ -61,7 +72,7 @@ export async function loginUser(payload) {
 
   if (!isPasswordValid) {
     throw createHttpError(
-      "Invalid email or password.",
+      "Invalid email/username or password.",
       HTTP_STATUS.UNAUTHORIZED
     );
   }

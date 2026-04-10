@@ -1,9 +1,12 @@
 import {
   getPlatformAnalytics,
-  getPlayerAnalytics,
   getTurfAnalytics,
 } from "@/modules/analytics/service";
 import { listUsers } from "@/repositories/user.repository";
+import {
+  buildPlayerProfileByUserId,
+  getPendingRatingsForPlayer,
+} from "@/services/player-profile.service";
 
 export async function getAdminStats() {
   return getPlatformAnalytics();
@@ -16,6 +19,7 @@ export async function getAdminUsers() {
     id: user._id.toString(),
     name: user.name,
     email: user.email,
+    username: user.username || null,
     role: user.role,
     turfId: user.turfId || null,
     createdAt: user.createdAt,
@@ -28,7 +32,16 @@ export async function getTurfStats(user) {
 }
 
 export async function getPlayerDashboard(user) {
-  return getPlayerAnalytics(user.id);
+  const profile = await buildPlayerProfileByUserId(user.id);
+  const pendingRatings = await getPendingRatingsForPlayer(profile.id);
+
+  return {
+    profile,
+    matchHistory: profile.pastMatchRecords,
+    recentPerformances: profile.recentPerformances,
+    pendingRatings,
+    rankingPosition: null,
+  };
 }
 
 export async function createHostedMatch(user, payload) {

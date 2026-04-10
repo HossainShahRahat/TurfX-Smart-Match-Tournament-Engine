@@ -259,11 +259,10 @@ export default function LiveMatchView({ matchId }) {
             <p className="text-sm uppercase tracking-[0.3em] text-brand-light">
               Live Match Broadcast
             </p>
-            <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">
-              Match {match.id}
-            </h1>
+            <h1 className="mt-3 text-3xl font-semibold sm:text-4xl">{match.title}</h1>
             <p className="mt-3 text-sm text-slate-400">
-              Status: <span className="font-medium text-slate-200">{match.status}</span>
+              {match.location} • {new Date(match.scheduledAt).toLocaleString()} • Status:{" "}
+              <span className="font-medium text-slate-200">{match.status}</span>
             </p>
           </div>
 
@@ -289,13 +288,13 @@ export default function LiveMatchView({ matchId }) {
 
         <div className="mt-8 grid gap-4 xl:grid-cols-[1fr_1fr_380px]">
           <TeamColumn
-            title="Team A"
+            title={match.teamALabel}
             side="Left"
             players={match.teamA}
             score={match.score.teamA}
           />
           <TeamColumn
-            title="Team B"
+            title={match.teamBLabel}
             side="Right"
             players={match.teamB}
             score={match.score.teamB}

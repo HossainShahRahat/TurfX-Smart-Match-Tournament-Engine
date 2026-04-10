@@ -64,3 +64,20 @@ export function validateUpsertSettingPayload(payload) {
   }
 }
 
+export function validateAdminCreatePlayerPayload(payload) {
+  if (!payload?.name || typeof payload.name !== "string" || !payload.name.trim()) {
+    throw createHttpError("Player name is required.", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (!payload?.email || typeof payload.email !== "string" || !payload.email.trim()) {
+    throw createHttpError("Player email is required.", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (!payload?.username || typeof payload.username !== "string" || !payload.username.trim()) {
+    throw createHttpError("Player username is required.", HTTP_STATUS.BAD_REQUEST);
+  }
+
+  if (!payload?.password || typeof payload.password !== "string" || payload.password.length < 6) {
+    throw createHttpError("Password must be at least 6 characters long.", HTTP_STATUS.BAD_REQUEST);
+  }
+}

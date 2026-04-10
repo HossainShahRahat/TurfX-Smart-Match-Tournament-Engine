@@ -1,6 +1,7 @@
 import DashboardShell from "@/components/dashboard/dashboard-shell";
 import DataTable from "@/components/dashboard/data-table";
 import StatCard from "@/components/dashboard/stat-card";
+import AdminPlatformClient from "@/components/admin/admin-platform-client";
 import {
   fetchDashboardApi,
   requireRoleForDashboard,
@@ -53,6 +54,7 @@ export default async function AdminDashboardPage() {
           columns={[
             { key: "name", label: "Name" },
             { key: "email", label: "Email" },
+            { key: "username", label: "Username" },
             { key: "role", label: "Role" },
             { key: "turfId", label: "Turf ID" },
           ]}
@@ -101,6 +103,8 @@ export default async function AdminDashboardPage() {
           </p>
         </div>
       </section>
+
+      <AdminPlatformClient />
     </DashboardShell>
   );
 }

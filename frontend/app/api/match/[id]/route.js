@@ -1,1 +1,4 @@
-export { getMatchByIdRoute as GET } from "@/modules/matches/routes";
+export {
+  getMatchByIdRoute as GET,
+  patchMatchByIdRoute as PATCH,
+} from "@/modules/matches/routes";

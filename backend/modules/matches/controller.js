@@ -11,6 +11,8 @@ import {
   createMatchRecord,
   getAllMatches,
   getMatchDetails,
+  updateMatchFixture,
+  updateMatchScore,
   updateMatchStatus,
 } from "./service";
 import {
@@ -18,7 +20,9 @@ import {
   validateAddEventPayload,
   validateCreateMatchPayload,
   validateMatchId,
+  validateMatchScorePayload,
   validateMatchStatusPayload,
+  validateUpdateMatchPayload,
 } from "./validator";
 
 export async function createMatchController(request) {
@@ -66,6 +70,25 @@ export async function getMatchByIdController(request, context) {
   }
 }
 
+export async function updateMatchFixtureController(request, context) {
+  try {
+    const currentUser = authorizeRoles(request, [
+      USER_ROLES.ADMIN,
+      USER_ROLES.TURF_OWNER,
+    ]);
+    const { id } = await context.params;
+    validateMatchId(id);
+
+    const body = await parseMatchRequestBody(request);
+    validateUpdateMatchPayload(body);
+
+    const match = await updateMatchFixture(id, body, currentUser);
+    return successResponse(match, "Match updated successfully.", HTTP_STATUS.OK);
+  } catch (error) {
+    return errorResponse(error, "Failed to update match.");
+  }
+}
+
 export async function addMatchEventController(request) {
   try {
     authorizeRoles(request, [USER_ROLES.ADMIN, USER_ROLES.TURF_OWNER]);
@@ -102,5 +125,24 @@ export async function updateMatchStatusController(request, context) {
     return successResponse(match, "Match status updated successfully.", HTTP_STATUS.OK);
   } catch (error) {
     return errorResponse(error, "Failed to update match status.");
+  }
+}
+
+export async function updateMatchScoreController(request, context) {
+  try {
+    const currentUser = authorizeRoles(request, [
+      USER_ROLES.ADMIN,
+      USER_ROLES.TURF_OWNER,
+    ]);
+    const { id } = await context.params;
+    validateMatchId(id);
+
+    const body = await parseMatchRequestBody(request);
+    validateMatchScorePayload(body);
+
+    const match = await updateMatchScore(id, body, currentUser);
+    return successResponse(match, "Match score updated successfully.", HTTP_STATUS.OK);
+  } catch (error) {
+    return errorResponse(error, "Failed to update match score.");
   }
 }

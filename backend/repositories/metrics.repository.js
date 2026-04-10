@@ -42,7 +42,7 @@ export async function findTopPlayers(limit = 5) {
 
   return playerModel
     .find({})
-    .select("name skillRating totalGoals totalMatches ranking")
+    .select("name skillRating totalGoals totalMatches averagePeerRating manOfTheMatchCount ranking")
     .sort({ skillRating: -1, totalGoals: -1 })
     .limit(limit)
     .lean();

@@ -25,10 +25,10 @@ export function validateRegisterPayload({ name, email, password }) {
   }
 }
 
-export function validateLoginPayload({ email, password }) {
-  if (!email || !password) {
+export function validateLoginPayload({ email, identifier, password }) {
+  if ((!email && !identifier) || !password) {
     throw createHttpError(
-      "Email and password are required.",
+      "Email or username, and password are required.",
       HTTP_STATUS.BAD_REQUEST
     );
   }

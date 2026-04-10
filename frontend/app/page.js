@@ -4,6 +4,7 @@ const setupSections = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/player", label: "Players" },
   { href: "/match", label: "Matches" },
+  { href: "/scoreboard", label: "Scoreboard" },
 ];
 
 export default function HomePage() {
@@ -23,7 +24,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-3">
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {setupSections.map((section) => (
             <Link
               key={section.href}

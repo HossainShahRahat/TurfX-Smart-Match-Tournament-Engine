@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+
 import { apiFetch } from "@/services/api-client";
 
 export default function PlayerProfileClient({ playerId }) {
@@ -30,7 +31,6 @@ export default function PlayerProfileClient({ playerId }) {
     }
 
     loadProfile();
-
     return () => {
       active = false;
     };
@@ -66,7 +66,7 @@ export default function PlayerProfileClient({ playerId }) {
             </p>
             <h1 className="mt-3 text-4xl font-semibold">{profile.name}</h1>
             <p className="mt-3 text-sm text-slate-400">
-              Public TurfX visibility page for player stats and highlights.
+              Public TurfX profile with goals, match history, and community vote rating.
             </p>
 
             <div className="mt-6 grid gap-3">
@@ -77,20 +77,22 @@ export default function PlayerProfileClient({ playerId }) {
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-white/10 px-4 py-3">
                   <p className="text-sm text-slate-400">Goals</p>
-                  <h3 className="mt-2 text-2xl font-semibold">{profile.stats.goals}</h3>
+                  <h3 className="mt-2 text-2xl font-semibold">{profile.totalGoals}</h3>
                 </div>
                 <div className="rounded-2xl border border-white/10 px-4 py-3">
                   <p className="text-sm text-slate-400">Matches</p>
-                  <h3 className="mt-2 text-2xl font-semibold">{profile.stats.matches}</h3>
+                  <h3 className="mt-2 text-2xl font-semibold">{profile.totalMatches}</h3>
                 </div>
                 <div className="rounded-2xl border border-white/10 px-4 py-3">
-                  <p className="text-sm text-slate-400">Cards</p>
-                  <h3 className="mt-2 text-2xl font-semibold">{profile.stats.cards}</h3>
-                </div>
-                <div className="rounded-2xl border border-white/10 px-4 py-3">
-                  <p className="text-sm text-slate-400">Highlights</p>
+                  <p className="text-sm text-slate-400">Vote Rating</p>
                   <h3 className="mt-2 text-2xl font-semibold">
-                    {profile.engagement.highlightAppearances}
+                    {profile.averagePeerRating}
+                  </h3>
+                </div>
+                <div className="rounded-2xl border border-white/10 px-4 py-3">
+                  <p className="text-sm text-slate-400">Man of the Match</p>
+                  <h3 className="mt-2 text-2xl font-semibold">
+                    {profile.manOfTheMatchCount}
                   </h3>
                 </div>
               </div>
@@ -99,38 +101,55 @@ export default function PlayerProfileClient({ playerId }) {
 
           <div className="space-y-6">
             <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <h2 className="text-2xl font-semibold">Recent Highlights</h2>
+              <h2 className="text-2xl font-semibold">Highlight Appearances</h2>
               <div className="mt-4 space-y-3">
-                {profile.highlights.map((post) => (
-                  <Link
-                    key={post.id}
-                    href={`/post/${post.id}`}
-                    className="block rounded-2xl border border-white/10 px-4 py-4 transition hover:border-brand/40 hover:bg-brand/10"
-                  >
-                    <p className="text-sm uppercase tracking-[0.2em] text-brand-light">
-                      {post.type.replaceAll("_", " ")}
-                    </p>
-                    <h3 className="mt-2 text-lg font-semibold text-white">{post.title}</h3>
-                    <p className="mt-2 text-sm text-slate-300">{post.content}</p>
-                  </Link>
-                ))}
+                {(profile.highlights || []).length ? (
+                  profile.highlights.map((post) => (
+                    <Link
+                      key={post.id}
+                      href={`/post/${post.id}`}
+                      className="block rounded-2xl border border-white/10 px-4 py-4 transition hover:border-brand/40 hover:bg-brand/10"
+                    >
+                      <p className="text-sm uppercase tracking-[0.2em] text-brand-light">
+                        {post.type.replaceAll("_", " ")}
+                      </p>
+                      <h3 className="mt-2 text-lg font-semibold text-white">{post.title}</h3>
+                      <p className="mt-2 text-sm text-slate-300">{post.content}</p>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    No highlight posts yet for this player.
+                  </p>
+                )}
               </div>
             </section>
 
             <section className="rounded-3xl border border-white/10 bg-white/5 p-5">
-              <h2 className="text-2xl font-semibold">Recent Match History</h2>
+              <h2 className="text-2xl font-semibold">Match History</h2>
               <div className="mt-4 space-y-3">
-                {profile.matchHistory.map((match) => (
-                  <div
-                    key={match.id}
-                    className="rounded-2xl border border-white/10 px-4 py-3"
-                  >
-                    <p className="font-medium text-white">Match {match.id}</p>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Status: {match.status}
-                    </p>
-                  </div>
-                ))}
+                {(profile.matchHistory || []).length ? (
+                  profile.matchHistory.map((match) => (
+                    <div
+                      key={match.id}
+                      className="rounded-2xl border border-white/10 px-4 py-3"
+                    >
+                      <p className="font-medium text-white">{match.title}</p>
+                      <p className="mt-1 text-sm text-slate-400">
+                        {match.teamALabel} {match.score.teamA} - {match.score.teamB}{" "}
+                        {match.teamBLabel}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        {match.location} | Result {match.result} | Goals {match.goals} | Vote
+                        rating {match.averagePeerRating || 0}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-400">
+                    Match history will appear after completed fixtures.
+                  </p>
+                )}
               </div>
             </section>
           </div>

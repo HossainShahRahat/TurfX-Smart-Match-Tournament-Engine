@@ -27,6 +27,26 @@ const playerSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    averagePeerRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    peerRatingSum: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    peerRatingCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    manOfTheMatchCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
   },
   {
     timestamps: true,

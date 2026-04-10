@@ -1,2 +1,4 @@
-export { getAdminPlayersRoute as GET } from "@/modules/admin-super/routes";
-
+export {
+  getAdminPlayersRoute as GET,
+  postAdminPlayersRoute as POST,
+} from "@/modules/admin-super/routes";

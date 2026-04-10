@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import LoginPanel from "@/components/auth/login-panel";
 import { roleRouteMap } from "@/modules/dashboard/service";
 import { getSessionUserFromCookies } from "@/utils/session";
 
@@ -21,9 +22,9 @@ export default async function DashboardPage() {
         </p>
         <h1 className="mt-4 text-4xl font-semibold">Dashboard Access</h1>
         <p className="mt-4 text-slate-300">
-          Sign in and store your JWT in the `token` cookie to access the correct
-          role dashboard automatically.
+          Sign in with your email or username to access the correct role dashboard automatically.
         </p>
+        <LoginPanel />
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link
             href="/dashboard/admin"

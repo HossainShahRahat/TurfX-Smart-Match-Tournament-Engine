@@ -1,6 +1,14 @@
-import { HTTP_STATUS, MATCH_STATUS, TOURNAMENT_STATUS } from "@/config/constants";
+import { HTTP_STATUS, MATCH_STATUS, TOURNAMENT_STATUS, USER_ROLES } from "@/config/constants";
 import { createHttpError } from "@/utils/http-error";
-import { countUsers, listUsers, updateUserById, findUserById } from "@/repositories/user.repository";
+import {
+  countUsers,
+  createUser,
+  findUserByEmail,
+  findUserById,
+  findUserByUsername,
+  listUsers,
+  updateUserById,
+} from "@/repositories/user.repository";
 import { listMatches, findMatchById, updateMatch, deleteMatchById } from "@/repositories/match.repository";
 import { listTournaments, findTournamentById, updateTournament } from "@/repositories/tournament.repository";
 import { listEvents, deleteEvents } from "@/repositories/event.repository";
@@ -16,9 +24,11 @@ import {
   updatePost,
 } from "@/repositories/feed.repository";
 import { createAuditLog } from "@/repositories/audit-log.repository";
-import { listPlayers } from "@/repositories/player.repository";
+import { createPlayer, listPlayers } from "@/repositories/player.repository";
 import { upsertSetting, listSettings } from "@/repositories/system-settings.repository";
 import { getAdminSuperOverview } from "@/services/adminAnalytics.service";
+import { hashPassword } from "@/utils/password";
+import { deleteRatings } from "@/repositories/rating.repository";
 
 function normalizeId(value) {
   return value?._id?.toString?.() || value?.toString?.() || null;
@@ -68,6 +78,7 @@ export async function getAdminUsers(options = {}) {
       filter.$or = [
         { name: { $regex: term, $options: "i" } },
         { email: { $regex: term, $options: "i" } },
+        { username: { $regex: term, $options: "i" } },
       ];
     }
   }
@@ -78,7 +89,7 @@ export async function getAdminUsers(options = {}) {
       sort: { createdAt: -1 },
       skip,
       limit,
-      select: "name email role turfId status suspendedAt suspensionReason createdAt updatedAt",
+      select: "name email username role turfId status suspendedAt suspensionReason createdAt updatedAt",
     }),
   ]);
 
@@ -90,6 +101,7 @@ export async function getAdminUsers(options = {}) {
       id: normalizeId(user),
       name: user.name,
       email: user.email,
+      username: user.username || null,
       role: user.role,
       turfId: user.turfId || null,
       status: user.status || "active",
@@ -204,7 +216,14 @@ export async function resetMatch(request, admin, matchId) {
   if (!match) throw createHttpError("Match not found.", HTTP_STATUS.NOT_FOUND);
 
   await deleteEvents({ matchId });
-  const updated = await updateMatch(matchId, { status: MATCH_STATUS.PENDING });
+  await deleteRatings({ matchId });
+  const updated = await updateMatch(matchId, {
+    status: MATCH_STATUS.PENDING,
+    completedAt: null,
+    score: { teamA: 0, teamB: 0 },
+    manOfTheMatchPlayerId: null,
+    manOfTheMatchReason: null,
+  });
 
   await logAdminAction(request, admin, {
     action: "match.reset",
@@ -221,6 +240,7 @@ export async function deleteMatch(request, admin, matchId) {
   if (!match) throw createHttpError("Match not found.", HTTP_STATUS.NOT_FOUND);
 
   await deleteEvents({ matchId });
+  await deleteRatings({ matchId });
   await deleteMatchById(matchId);
 
   await logAdminAction(request, admin, {
@@ -465,6 +485,8 @@ export async function getAdminPlayers(options = {}) {
     rows: players.map((p) => ({
       id: normalizeId(p),
       name: p.name,
+      averagePeerRating: p.averagePeerRating || 0,
+      manOfTheMatchCount: p.manOfTheMatchCount || 0,
       skillRating: p.skillRating || 0,
       totalGoals: p.totalGoals || 0,
       totalMatches: p.totalMatches || 0,
@@ -472,6 +494,72 @@ export async function getAdminPlayers(options = {}) {
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     })),
+  };
+}
+
+export async function createAdminPlayer(request, admin, payload) {
+  const email = String(payload.email).trim().toLowerCase();
+  const username = String(payload.username).trim().toLowerCase();
+  const name = String(payload.name).trim();
+
+  const [existingEmail, existingUsername] = await Promise.all([
+    findUserByEmail(email),
+    findUserByUsername(username),
+  ]);
+
+  if (existingEmail) {
+    throw createHttpError("A user already exists with this email.", HTTP_STATUS.CONFLICT);
+  }
+
+  if (existingUsername) {
+    throw createHttpError("A user already exists with this username.", HTTP_STATUS.CONFLICT);
+  }
+
+  const user = await createUser({
+    name,
+    email,
+    username,
+    password: await hashPassword(payload.password),
+    role: USER_ROLES.PLAYER,
+  });
+
+  const player = await createPlayer({
+    name,
+    userId: user._id,
+    totalGoals: 0,
+    totalMatches: 0,
+    skillRating: 0,
+    averagePeerRating: 0,
+    peerRatingSum: 0,
+    peerRatingCount: 0,
+    manOfTheMatchCount: 0,
+  });
+
+  await logAdminAction(request, admin, {
+    action: "player.create",
+    targetEntity: "Player",
+    targetId: normalizeId(player),
+    metadata: {
+      userId: normalizeId(user),
+      email,
+      username,
+    },
+  });
+
+  return {
+    id: normalizeId(player),
+    userId: normalizeId(user),
+    name,
+    email,
+    username,
+    role: user.role,
+    initialPassword: payload.password,
+    totalGoals: player.totalGoals,
+    totalMatches: player.totalMatches,
+    skillRating: player.skillRating,
+    averagePeerRating: player.averagePeerRating,
+    manOfTheMatchCount: player.manOfTheMatchCount,
+    createdAt: player.createdAt,
   };
 }
 
@@ -551,4 +639,3 @@ export async function notifyRoleBased(request, admin, payload) {
       "Notification subsystem is not wired in this codebase. Endpoint logs the intent for audit purposes.",
   };
 }
-

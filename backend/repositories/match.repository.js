@@ -16,12 +16,33 @@ export async function listMatches(filter = {}, options = {}) {
   }
 
   if (options.populatePlayers) {
-    query = query.populate("teamA", "name totalGoals totalMatches skillRating");
-    query = query.populate("teamB", "name totalGoals totalMatches skillRating");
+    query = query.populate(
+      "teamA",
+      "name totalGoals totalMatches skillRating averagePeerRating manOfTheMatchCount"
+    );
+    query = query.populate(
+      "teamB",
+      "name totalGoals totalMatches skillRating averagePeerRating manOfTheMatchCount"
+    );
   }
 
   if (options.populateCreator) {
-    query = query.populate("createdBy", "name email role");
+    query = query.populate("createdBy", "name email username role");
+  }
+
+  if (options.populateMotm) {
+    query = query.populate(
+      "manOfTheMatchPlayerId",
+      "name totalGoals totalMatches skillRating averagePeerRating manOfTheMatchCount"
+    );
+  }
+
+  if (options.skip) {
+    query = query.skip(options.skip);
+  }
+
+  if (options.limit) {
+    query = query.limit(options.limit);
   }
 
   if (options.lean) {
@@ -37,12 +58,25 @@ export async function findMatchById(id, options = {}) {
   let query = Match.findById(id);
 
   if (options.populatePlayers) {
-    query = query.populate("teamA", "name totalGoals totalMatches skillRating");
-    query = query.populate("teamB", "name totalGoals totalMatches skillRating");
+    query = query.populate(
+      "teamA",
+      "name totalGoals totalMatches skillRating averagePeerRating manOfTheMatchCount"
+    );
+    query = query.populate(
+      "teamB",
+      "name totalGoals totalMatches skillRating averagePeerRating manOfTheMatchCount"
+    );
   }
 
   if (options.populateCreator) {
-    query = query.populate("createdBy", "name email role");
+    query = query.populate("createdBy", "name email username role");
+  }
+
+  if (options.populateMotm) {
+    query = query.populate(
+      "manOfTheMatchPlayerId",
+      "name totalGoals totalMatches skillRating averagePeerRating manOfTheMatchCount"
+    );
   }
 
   if (options.lean) {

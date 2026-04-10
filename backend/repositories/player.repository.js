@@ -51,6 +51,10 @@ export async function listPlayers(filter = {}, options = {}) {
     query = query.limit(options.limit);
   }
 
+  if (options.skip) {
+    query = query.skip(options.skip);
+  }
+
   return query.lean();
 }
 
