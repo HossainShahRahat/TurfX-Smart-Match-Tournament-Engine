@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build",
-    "start": "node server.js --prod",
-    "lint": "next lint"
+    "dev": "node frontend/server.js",
+    "build": "next build frontend",
+    "start": "node frontend/server.js --prod",
+    "lint": "next lint frontend"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

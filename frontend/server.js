@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const dev = !process.argv.includes("--prod");
 const hostname = "0.0.0.0";
 const port = Number(process.env.PORT || 3000);
-const app = next({ dev, hostname, port });
+const app = next({ dev, hostname, port, dir: __dirname });
 const handle = app.getRequestHandler();
 
 function parseCookies(header = "") {
